@@ -1,18 +1,14 @@
-FROM mcr.microsoft.com/azurelinux/base/core:4.0
+FROM registry.fedoraproject.org/fedora:43
 
-RUN tdnf -y install \
-        build-essential \
-        ca-certificates \
+RUN dnf -y install \
         createrepo_c \
+        gcc \
         git \
         golang \
+        make \
         mock \
-        mock-rpmautospec \
-        openssl \
-        python3 \
-        shadow-utils \
-        sudo \
-    && tdnf clean all
+        rpm-build \
+    && dnf clean all
 
 RUN GOBIN=/usr/local/bin go install \
         github.com/microsoft/azure-linux-dev-tools/cmd/azldev@main \
