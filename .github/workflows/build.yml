@@ -9,6 +9,9 @@ on:
 permissions:
   contents: write
 
+env:
+  AZURELINUX_REF: tomls/base/main
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -35,6 +38,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: microsoft/azurelinux
+          ref: ${{ env.AZURELINUX_REF }}
           path: azurelinux
 
       - name: Add joe component
