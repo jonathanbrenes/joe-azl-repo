@@ -1,0 +1,5 @@
+base/
+azurelinux/
+repo/
+*.rpm
+*.tar.gz

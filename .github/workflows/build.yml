@@ -1,0 +1,118 @@
+name: Build and Release Joe RPM
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+
+      - name: Checkout Azure Linux
+        uses: actions/checkout@v4
+        with:
+          repository: microsoft/azurelinux
+          ref: tomls/base/main
+          path: azurelinux
+
+      - name: Add joe component
+        working-directory: azurelinux
+        run: |
+          # Insert joe component (alphabetically between jo and jomolhari-fonts)
+          sed -i '/^\[components\.jo\]$/a [components.joe]' base/comps/components.toml
+
+      - name: Build container image
+        run: docker build -t joe-builder .
+
+      - name: Update lock
+        run: |
+          docker run --rm \
+            --cap-add=SYS_ADMIN \
+            --security-opt seccomp=unconfined \
+            --security-opt apparmor=unconfined \
+            -v "${{ github.workspace }}/azurelinux:/workdir" \
+            joe-builder \
+            bash -c "azldev comp update -p joe -q"
+
+      - name: Render spec
+        run: |
+          docker run --rm \
+            --cap-add=SYS_ADMIN \
+            --security-opt seccomp=unconfined \
+            --security-opt apparmor=unconfined \
+            -v "${{ github.workspace }}/azurelinux:/workdir" \
+            joe-builder \
+            bash -c "azldev comp render -p joe -q"
+
+      - name: Build RPM
+        run: |
+          docker run --rm \
+            --cap-add=SYS_ADMIN \
+            --security-opt seccomp=unconfined \
+            --security-opt apparmor=unconfined \
+            -v "${{ github.workspace }}/azurelinux:/workdir" \
+            joe-builder \
+            bash -c "azldev comp build -p joe -q"
+
+      - name: Generate repo metadata
+        run: |
+          mkdir -p repo
+          cp azurelinux/base/out/rpms/rpm-sdk/joe-*.rpm repo/ 2>/dev/null || true
+          cp azurelinux/base/out/rpms/joe-*.rpm repo/ 2>/dev/null || true
+          docker run --rm \
+            -v "${{ github.workspace }}/repo:/repo" \
+            joe-builder \
+            bash -c "createrepo_c /repo"
+
+      - name: Get RPM version
+        id: rpm_version
+        run: |
+          RPM_FILE=$(ls repo/joe-[0-9]*.rpm | head -1)
+          RPM_NAME=$(basename "$RPM_FILE")
+          echo "rpm_name=$RPM_NAME" >> "$GITHUB_OUTPUT"
+          echo "rpm_file=$RPM_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Create tarball of repo
+        run: tar czf joe-azl4-repo.tar.gz -C repo .
+
+      - name: Create or update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "joe for Azure Linux 4.0 — ${{ github.ref_name }}"
+          body: |
+            ## Joe's Own Editor for Azure Linux 4.0
+
+            ### Quick install (standalone RPM)
+            ```bash
+            curl -LO https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.rpm_version.outputs.rpm_name }}
+            sudo tdnf install ./${{ steps.rpm_version.outputs.rpm_name }}
+            ```
+
+            ### As a TDNF repo (with updates)
+            ```bash
+            sudo tee /etc/yum.repos.d/joe-editor.repo << 'EOF'
+            [joe-editor]
+            name=Joe Editor for Azure Linux 4.0
+            baseurl=https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/
+            enabled=1
+            gpgcheck=0
+            EOF
+            sudo tdnf install joe
+            ```
+
+            > **Note:** GitHub Releases URLs don't work directly as a `baseurl` for TDNF.
+            > Download `joe-azl4-repo.tar.gz`, extract to a local/hosted directory, and point `baseurl` there.
+          files: |
+            ${{ steps.rpm_version.outputs.rpm_file }}
+            repo/joe-debug*.rpm
+            joe-azl4-repo.tar.gz
