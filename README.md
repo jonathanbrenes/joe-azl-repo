@@ -1,6 +1,6 @@
-# Joe's Own Editor — Azure Linux 4.0 RPM
+# Joe's Own Editor — Azure Linux RPM
 
-Pre-built RPM packages of [Joe's Own Editor](https://joe-editor.sourceforge.io/) for [Azure Linux 4.0](https://github.com/microsoft/azurelinux).
+Pre-built RPM packages of [Joe's Own Editor](https://joe-editor.sourceforge.io/) for [Azure Linux](https://github.com/microsoft/azurelinux).
 
 ## Install
 
@@ -18,16 +18,16 @@ sudo tdnf install ./joe-4.6-24.azl4.x86_64.rpm
 
 1. Download and extract the repo tarball to a web-accessible location:
    ```bash
-   curl -LO https://github.com/jonathanbrenes/joe-azl-repo/releases/latest/download/joe-azl4-repo.tar.gz
+   curl -LO https://github.com/jonathanbrenes/joe-azl-repo/releases/latest/download/joe-azl-repo.tar.gz
    mkdir -p /srv/joe-repo
-   tar xzf joe-azl4-repo.tar.gz -C /srv/joe-repo
+   tar xzf joe-azl-repo.tar.gz -C /srv/joe-repo
    ```
 
 2. Serve it via any HTTP server (nginx, Azure Blob Storage, etc.), then on each client:
    ```bash
    sudo tee /etc/yum.repos.d/joe-editor.repo << 'EOF'
    [joe-editor]
-   name=Joe Editor for Azure Linux 4.0
+   name=Joe Editor for Azure Linux
    baseurl=https://your-server.example.com/joe-repo/
    enabled=1
    gpgcheck=0
@@ -41,7 +41,7 @@ sudo tdnf install ./joe-4.6-24.azl4.x86_64.rpm
 ```bash
 # Clone Azure Linux
 git clone https://github.com/microsoft/azurelinux.git
-cd azurelinux && git checkout tomls/base/main
+cd azurelinux
 
 # Add joe component
 sed -i '/^\[components\.jo\]$/a [components.joe]' base/comps/components.toml

@@ -21,7 +21,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: microsoft/azurelinux
-          ref: tomls/base/main
           path: azurelinux
 
       - name: Add joe component
@@ -82,15 +81,15 @@ jobs:
           echo "rpm_file=$RPM_FILE" >> "$GITHUB_OUTPUT"
 
       - name: Create tarball of repo
-        run: tar czf joe-azl4-repo.tar.gz -C repo .
+        run: tar czf joe-azl-repo.tar.gz -C repo .
 
       - name: Create or update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: "joe for Azure Linux 4.0 — ${{ github.ref_name }}"
+          name: "joe for Azure Linux — ${{ github.ref_name }}"
           body: |
-            ## Joe's Own Editor for Azure Linux 4.0
+            ## Joe's Own Editor for Azure Linux
 
             ### Quick install (standalone RPM)
             ```bash
@@ -102,7 +101,7 @@ jobs:
             ```bash
             sudo tee /etc/yum.repos.d/joe-editor.repo << 'EOF'
             [joe-editor]
-            name=Joe Editor for Azure Linux 4.0
+            name=Joe Editor for Azure Linux
             baseurl=https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/
             enabled=1
             gpgcheck=0
@@ -111,8 +110,8 @@ jobs:
             ```
 
             > **Note:** GitHub Releases URLs don't work directly as a `baseurl` for TDNF.
-            > Download `joe-azl4-repo.tar.gz`, extract to a local/hosted directory, and point `baseurl` there.
+            > Download `joe-azl-repo.tar.gz`, extract to a local/hosted directory, and point `baseurl` there.
           files: |
             ${{ steps.rpm_version.outputs.rpm_file }}
             repo/joe-debug*.rpm
-            joe-azl4-repo.tar.gz
+            joe-azl-repo.tar.gz
