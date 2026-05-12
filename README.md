@@ -36,23 +36,6 @@ sudo tdnf install ./joe-4.6-24.azl4.x86_64.rpm
    sudo tdnf install joe
    ```
 
-## Build locally
-
-```bash
-# Clone Azure Linux
-git clone https://github.com/microsoft/azurelinux.git
-cd azurelinux
-
-# Add joe component
-sed -i '/^\[components\.jo\]$/a [components.joe]' base/comps/components.toml
-
-# Build (requires mock + azldev)
-azldev comp update -p joe -q
-azldev comp render -p joe
-azldev comp build -p joe -q
-# RPM is in base/out/rpms/
-```
-
 ## Rebuild on new release
 
 Push a new tag to trigger the GitHub Actions workflow:
